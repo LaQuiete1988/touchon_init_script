@@ -186,12 +186,12 @@ function app_installation(){
 }
 
 function docker_delete(){
-  apt-get purge docker-ce -y
-  apt autoremove -y
-  rm -rf /etc/apt/keyrings
-  echo "" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  rm /usr/bin/docker-compose
-  usermod touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
+  sudo apt-get purge docker-ce -y
+  sudo apt autoremove -y
+  sudo rm -rf /etc/apt/keyrings
+  echo "" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo rm /usr/bin/docker-compose
+  sudo usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
 }
 
 #rootfs_expand
