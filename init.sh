@@ -246,6 +246,7 @@ case "$1" in
   -down) down_docker-compose ;;
   -upd) update_docker-compose ;;
   -as) app_installation ;;
+  -all) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
   -x) docker_delete ;;
   *) echo "$1 is not an option"; usage; exit 254 ;;
 esac
