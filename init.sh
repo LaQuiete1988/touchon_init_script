@@ -26,19 +26,25 @@ function iptables_legacy(){
 }
 
 function docker_installation(){
-  if [ $(dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | grep -c "ok installed") -eq 0 ];
-  then
+  if [ $(dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | \
+grep -c "ok installed") -eq 0 ]; then
     echo -e "\n"
     echo "==================================================="
     echo "        Docker installation                        "
     echo "==================================================="
 	echo -e "\n"
-    apt-get update && apt-get install ca-certificates curl gnupg lsb-release -y
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update && apt-get install docker-ce -y
-    usermod -aG docker $USER
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl gnupg lsb-release -y
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | \
+sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) \
+signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update && sudo apt-get install docker-ce -y
+    sudo usermod -aG docker $USER
+    newgrp docker
 	echo -e "\n"
     echo "==================================================="
     echo "        Docker was installed                       "
@@ -59,26 +65,75 @@ function docker-compose_installation(){
     echo "    Docker-compose installation                    "
     echo "==================================================="
 	echo -e "\n"
-    wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-aarch64
-    chmod +x /usr/bin/docker-compose
-	echo -e "\n"
-    echo "==================================================="
-    echo "    Docker-compose was installed                   "
-    echo "==================================================="
-	echo -e "\n"
+    sudo wget -O /usr/bin/docker-compose \
+https://github.com/docker/compose/releases/download/v2.13.0\
+/docker-compose-linux-$(uname -m) && sudo chmod +x /usr/bin/docker-compose
+    if [ -x /usr/bin/docker-compose ]; then
+      echo -e "${GREEN}[OK]${NC} Docker-compose installed sucsessfully."
+	    echo -e "\n"
+    else
+      echo -e "${RED}[FAIL!]${NC} Docker-compose failed to install."
+      exit 1
   fi
 }
 
-function run_dc(){
-  if [[ ! -d touchon_dc ]]; then
-    git clone https://github.com/LaQuiete1988/touchon_dc.git
-    cd touchon_dc && docker-compose up -d && cd ..
+function check_docker-compose(){
+  services=(mysql php-fpm nginx phpmyadmin)
+  containers=0
+  for i in ${services[@]}; do
+    if [[ $(docker ps | grep touchon_$i) ]]; then
+      $containers++
+    fi
+  done
+  if [[ $containers -eq 4 ]]; then
+    echo -e "${GREEN}[OK]${NC} Docker-compose containers started sucsessfully."
+    containers=0
   else
-    cd touchon_dc && docker-compose down && cd ..
-    cd touchon_dc && git pull origin master && docker-compose up -d --no-deps --build && cd ..
+    echo -e "${RED}[FAIL!]${NC} Docker-compose containers failed to start properly."
+    exit 1
+    containers=0
   fi
 }
 
+function setup_docker-compose(){
+    git clone https://github.com/LaQuiete1988/touchon_dc.git
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}[OK]${NC} Docker-compose containers are ready to start."
+    else
+      echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to download."
+      exit 1
+    fi
+}
+
+function up_docker-compose(){
+  if [[ ! -d touchon_dc ]]; then
+    setup_docker-compose
+    cd touchon_dc && docker-compose up -d && cd ..
+    check_docker-compose
+  else
+    cd touchon_dc && docker-compose up -d && cd ..
+    check_docker-compose
+  fi
+}
+
+function update_docker-compose(){
+  if [[ -d touchon_dc ]]; then
+    cd touchon_dc && docker-compose down
+    git pull origin master
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}[OK]${NC} Docker-compose files were updated."
+    else
+      echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to update."
+      exit 1
+    fi
+    up_docker-compose
+    check_docker-compose
+  else
+    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. \
+Please install them first."
+    exit 1
+  fi
+}
 
 
 function app_installation(){
@@ -177,7 +232,7 @@ case "$1" in
   -l) iptables_legacy ;;
   -h) usage; exit 254 ;;
   -d) docker_installation; docker-compose_installation ;;
-  -r) run_dc ;;
+  -r) setup_dc ;;
   -a) app_installation ;;
   -x) docker_delete ;;
   *) echo "$1 is not an option" ;;
