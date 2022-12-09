@@ -82,10 +82,10 @@ function check_docker-compose(){
   containers=0
   for i in ${services[@]}; do
     if [[ $(docker ps | grep touchon_$i) ]]; then
-      $containers++
+      containers=$((containers+1))
     fi
   done
-  if [[ $containers -eq 4 ]]; then
+  if [[ $containers -eq ${#services[@]} ]]; then
     echo -e "${GREEN}[OK]${NC} Docker-compose containers started sucsessfully."
     containers=0
   else
