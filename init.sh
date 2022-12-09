@@ -7,13 +7,16 @@ NC='\033[0m'
 function usage(){
   echo "Usage: init.sh [KEYS]"
   echo "Available options:"
-  echo "-e   expand rootfs on the hole drive"
-  echo "-l   enable iptable legacy mode"
-  echo "-h   help"
-  echo "-d   docker and docker-compose installation"
-  echo "-r   download and start containers"
-  echo "-a   apps setup"
-  echo "-x   delete docker and docker-compose"
+#  echo "-e   expand rootfs on the hole drive"
+#  echo "-l   enable iptable legacy mode"
+  echo "-h       help"
+  echo "-s       docker and docker-compose installation"
+  echo "-up      download and start containers"
+  echo "-down    stop containers"
+  echo "-upd     update containers"
+  echo "-as      apps setup"
+  echo "-all     docker and docker-compose installation, download and start containers, apps setup"
+  echo "-x       delete docker and docker-compose"
 }
 
 function rootfs_expand(){
@@ -37,16 +40,16 @@ grep -c "ok installed") -eq 0 ]; then
     sudo apt-get install ca-certificates curl gnupg lsb-release -y
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
-sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install docker-ce -y
     sudo usermod -aG docker $USER
     newgrp docker
-	echo -e "\n"
+	  echo -e "\n"
     echo "==================================================="
     echo "        Docker was installed                       "
     echo "==================================================="
-	echo -e "\n"
+	  echo -e "\n"
   else
     echo -e "${GREEN}Docker is already installed${NC}"
   fi
@@ -62,9 +65,8 @@ function docker-compose_installation(){
     echo "    Docker-compose installation                    "
     echo "==================================================="
 	echo -e "\n"
-    sudo wget -O /usr/bin/docker-compose \
-https://github.com/docker/compose/releases/download/v2.13.0\
-/docker-compose-linux-$(uname -m) && sudo chmod +x /usr/bin/docker-compose
+    sudo wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-$(uname -m) \
+&& sudo chmod +x /usr/bin/docker-compose
     if [ -x /usr/bin/docker-compose ]; then
       echo -e "${GREEN}[OK]${NC} Docker-compose installed sucsessfully."
 	    echo -e "\n"
@@ -102,6 +104,16 @@ function setup_docker-compose(){
     fi
 }
 
+function down_docker-compose(){
+  if [[ ! -d touchon_dc ]]; then
+    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. Please install them first."
+    exit 1
+  else
+    cd touchon_dc && docker-compose down && cd ..
+    echo -e "${GREEN}[OK]${NC} Docker-compose containers were stoped."
+  fi
+}
+
 function up_docker-compose(){
   if [[ ! -d touchon_dc ]]; then
     setup_docker-compose
@@ -113,6 +125,7 @@ function up_docker-compose(){
   fi
 }
 
+
 function update_docker-compose(){
   if [[ -d touchon_dc ]]; then
     cd touchon_dc && docker-compose down
@@ -123,11 +136,10 @@ function update_docker-compose(){
       echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to update."
       exit 1
     fi
-    up_docker-compose
+    docker-compose up -d --no-deps --build && cd ..
     check_docker-compose
   else
-    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. \
-Please install them first."
+    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. Please install them first."
     exit 1
   fi
 }
@@ -225,14 +237,16 @@ fi
 while [ -n "$1" ]
 do
 case "$1" in
-  -e) rootfs_expand ;;
-  -l) iptables_legacy ;;
+  # -e) rootfs_expand ;;
+  # -l) iptables_legacy ;;
   -h) usage; exit 254 ;;
-  -d) docker_installation; docker-compose_installation ;;
-  -r) setup_dc ;;
-  -a) app_installation ;;
+  -s) docker_installation; docker-compose_installation ;;
+  -up) up_docker-compose ;;
+  -down) down_docker-compose ;;
+  -upd) update_docker-compose ;;
+  -as) app_installation ;;
   -x) docker_delete ;;
-  *) echo "$1 is not an option" ;;
+  *) echo "$1 is not an option"; usage; exit 254 ;;
 esac
 shift
 done
