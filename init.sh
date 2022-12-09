@@ -73,6 +73,7 @@ function docker-compose_installation(){
     else
       echo -e "${RED}[FAIL!]${NC} Docker-compose failed to install."
       exit 1
+    fi
   fi
 }
 
