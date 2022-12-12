@@ -31,11 +31,9 @@ function iptables_legacy(){
 function docker_installation(){
   if [ $(dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | \
 grep -c "ok installed") -eq 0 ]; then
-    echo -e "\n"
-    echo "==================================================="
-    echo "        Docker installation                        "
-    echo "==================================================="
-	echo -e "\n"
+    # echo "==================================================="
+    # echo "        Docker installation                        "
+    # echo "==================================================="
     sudo apt-get update
     sudo apt-get install ca-certificates curl gnupg lsb-release -y
     sudo mkdir -p /etc/apt/keyrings
@@ -43,15 +41,31 @@ grep -c "ok installed") -eq 0 ]; then
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install docker-ce -y
-    sudo usermod -aG docker $USER
-    newgrp docker
-	  echo -e "\n"
-    echo "==================================================="
-    echo "        Docker was installed                       "
-    echo "==================================================="
-	  echo -e "\n"
+    cat << EOF | sudo usermod -aG docker $USER
+exec sudo su -l $USER
+docker login -u $DOCKER_USER -p $DOCKER_PW
+EOF
+    docker run hello-world
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}[OK]${NC} Docker was installed sucsessfully."
+    else
+      echo -e "${RED}[FAIL!]${NC} Docker failed to install."
+      exit 1
+    fi
+	  # echo -e "\n"
+    # echo "==================================================="
+    # echo "        Docker was installed                       "
+    # echo "==================================================="
+	  # echo -e "\n"
   else
-    echo -e "${GREEN}Docker is already installed${NC}"
+    docker run hello-world
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}Docker is already installed${NC}"
+    else
+      echo -e "${RED}[FAIL!]${NC} Docker failed to install."
+      exit 1
+    fi
+
   fi
 }
 
@@ -75,6 +89,17 @@ function docker-compose_installation(){
       exit 1
     fi
   fi
+}
+
+function reboot(){
+  echo -e "Now reboot is required. You should run the script once again after reboot.\nReboot right now?"
+  echo -n "Продолжить? (Y/n) "
+  read item
+  case "$item" in
+    y|Y) sudo reboot ;;
+    n|N) echo "You should reboot before you'll able to continue."; exit 1 ;;
+    *) sudo reboot ;;
+  esac
 }
 
 function check_docker-compose(){
@@ -173,14 +198,13 @@ function app_installation(){
   -e "s/\$dbuser =.*/\$dbuser = \'\${MYSQL_USER}\';/g" \
   -e "s/\$dbpass =.*/\$dbpass = \'\${MYSQL_PASSWORD}\';/g" \
   server/include.php
-  docker exec touchon_php-fpm \
-  chown -R www-data:www-data /var/www/adm && \
-  find /var/www/adm -type f -exec chmod 644 {} \+ && \
-  find /var/www/adm -type d -exec chmod 755 {} \+ && \
-  chmod -R ug+rwx /var/www/adm/storage /var/www/adm/bootstrap/cache && \
-  ln -s /var/www/server/userscripts /var/www/adm/storage/app/scripts && \
-  chown -R www-data:www-data /var/www/server/userscripts && \
-  chmod -R 770 /var/www/server/userscripts
+  docker exec touchon_php-fpm chown -R www-data:www-data adm
+  docker exec touchon_php-fpm find /var/www/adm -type f -exec chmod 644 {} \+
+  docker exec touchon_php-fpm find /var/www/adm -type d -exec chmod 755 {} \+
+  docker exec touchon_php-fpm chmod -R ug+rwx /var/www/adm/storage /var/www/adm/bootstrap/cache
+  docker exec touchon_php-fpm ln -s /var/www/server/userscripts /var/www/adm/storage/app/scripts
+  docker exec touchon_php-fpm chown -R www-data:www-data /var/www/server/userscripts
+  docker exec touchon_php-fpm chmod -R 770 /var/www/server/userscripts
   docker exec -it touchon_php-fpm php adm/artisan migrate --seed --force
   docker exec -it touchon_php-fpm php adm/artisan create:user
 }
@@ -241,7 +265,7 @@ case "$1" in
   # -e) rootfs_expand ;;
   # -l) iptables_legacy ;;
   -h) usage; exit 254 ;;
-  -s) docker_installation; docker-compose_installation ;;
+  -s) docker_installation; docker-compose_installation  ;;
   -up) up_docker-compose ;;
   -down) down_docker-compose ;;
   -upd) update_docker-compose ;;
