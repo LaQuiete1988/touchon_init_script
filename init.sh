@@ -40,12 +40,12 @@ function docker_installation(){
       exit 1
     fi
   else
-    apt-get update && apt-get install ca-certificates curl gnupg lsb-release -y
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo apt-get update && sudo apt-get install ca-certificates curl gnupg lsb-release -y
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update && apt-get install docker-ce -y
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update && sudo apt-get install docker-ce -y
     usermod -aG docker $USER
     add_startup_script
     reboot
@@ -57,8 +57,8 @@ function docker-compose_installation(){
   then
     echo -e "${GREEN}[INFO]${NC} Docker-compose is already installed."
   else
-    wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-$(uname -m) \
-&& chmod +x /usr/bin/docker-compose
+    sudo wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-$(uname -m) \
+&& sudo chmod +x /usr/bin/docker-compose
     if [ -x /usr/bin/docker-compose ]; then
       echo -e "${GREEN}[INFO]${NC} Docker-compose installed sucsessfully."
 	    echo -e "\n"
@@ -75,9 +75,9 @@ function reboot(){
   echo -n "Continue? (Y/n) "
   read item
   case "$item" in
-    y|Y) reboot ;;
+    y|Y) sudo reboot ;;
     n|N) echo -e "${RED}[WARNING]${NC} You should reboot. Script will continue after your next login."; exit 1 ;;
-    *) reboot ;;
+    *) sudo reboot ;;
   esac
 }
 
@@ -86,8 +86,8 @@ function add_startup_script(){
 '#!/usr/bin/env bash
 cd /home/touchon/touchon_init_script
 ./init.sh setup
-sudo rm /etc/profile.d/startup.sh' | tee /etc/profile.d/startup.sh > /dev/null
-  chmod +x /etc/profile.d/startup.sh
+sudo rm /etc/profile.d/startup.sh' | sudo tee /etc/profile.d/startup.sh > /dev/null
+  sudo chmod +x /etc/profile.d/startup.sh
 }
 
 function check_startup_script(){
@@ -196,12 +196,13 @@ server/include.php
 }
 
 function docker_delete(){
-  apt-get purge docker-ce -y
-  apt autoremove -y
-  rm -rf /etc/apt/keyrings
-  echo "" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  rm /usr/bin/docker-compose
+  sudo apt-get purge docker-ce -y
+  sudo apt autoremove -y
+  sudo rm -rf /etc/apt/keyrings
+  echo "" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo rm /usr/bin/docker-compose
   usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
+  reboot
 }
 
 if [[ ! -f .env ]]; then
