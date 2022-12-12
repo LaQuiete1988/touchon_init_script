@@ -42,13 +42,13 @@ grep -c "ok installed") -eq 0 ]; then
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install docker-ce -y
     sudo usermod -aG docker $USER
-    negrp docker | exec "./init.sh -s"
-    if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[OK]${NC} Docker was installed sucsessfully."
-    else
-      echo -e "${RED}[FAIL!]${NC} Docker failed to install."
-      exit 1
-    fi
+    reboot
+    # if [ $? -eq 0 ]; then
+    #   echo -e "${GREEN}[OK]${NC} Docker was installed sucsessfully."
+    # else
+    #   echo -e "${RED}[FAIL!]${NC} Docker failed to install."
+    #   exit 1
+    # fi
 	  # echo -e "\n"
     # echo "==================================================="
     # echo "        Docker was installed                       "
