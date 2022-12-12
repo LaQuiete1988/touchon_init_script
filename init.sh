@@ -18,6 +18,7 @@ function usage(){
   echo "app        apps setup"
   echo "setup      docker and docker-compose installation, download and start containers, apps setup"
   echo "-x         delete docker and docker-compose"
+  echo "-s         add startup script"
 }
 
 function rootfs_expand(){
@@ -86,10 +87,9 @@ function add_startup_script(){
   echo \
 '#!/usr/bin/env bash
 cd /home/touchon/touchon_init_script
-./init.sh setup'
-> /etc/profile.d/startup.sh
+./init.sh setup
+sudo rm -- "$0"' | sudo tee /etc/profile.d/startup.sh > /dev/null
   sudo chmod +x /etc/profile.d/startup.sh
-  sudo rm -- "$0"
 }
 
 function check_startup_script(){
@@ -206,7 +206,7 @@ function docker_delete(){
   sudo usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
 }
 
-del_startup_script
+check_startup_script
 
 if [[ ! -f .env ]]; then
   echo \
@@ -255,6 +255,7 @@ case "$1" in
   app) app_installation ;;
   setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
   -x) docker_delete ;;
+  -s) add_startup_script ;;
   *) echo "$1 is not an option"; usage; exit 254 ;;
 esac
 shift
