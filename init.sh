@@ -14,7 +14,7 @@ function usage(){
   echo "--ps          containers' status"
   echo "--cupd        update containers"
   echo "--setup       docker and docker-compose installation, download and start containers, apps setup"
-  echo -e "/nRun ./init --setup first to configurate system.\n"
+  echo -e "\nRun   ${YELLOW}./init --setup${NC}   first to configurate system.\n"
 }
 
 function rootfs_expand(){
