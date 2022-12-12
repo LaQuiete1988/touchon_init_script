@@ -16,7 +16,7 @@ function usage(){
   echo "down       stop containers"
   echo "cupd       update containers"
   echo "app        apps setup"
-  echo "all        docker and docker-compose installation, download and start containers, apps setup"
+  echo "setup      docker and docker-compose installation, download and start containers, apps setup"
   echo "-x         delete docker and docker-compose"
 }
 
@@ -39,6 +39,7 @@ grep -c "ok installed") -eq 0 ]; then
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install docker-ce -y
     sudo usermod -aG docker $USER
+    add_startup_script
     reboot
   else
     docker run hello-world
@@ -71,14 +72,31 @@ function docker-compose_installation(){
 
 function reboot(){
   echo -e "\n"
-  echo -e "${YELLOW}[CAUTION]${NC} Now reboot is required. You should run the script once again after reboot.\nReboot right now?"
+  echo -e "${YELLOW}[CAUTION]${NC} Now reboot is required. Script will continue after your next login.\nReboot right now?"
   echo -n "Continue? (Y/n) "
   read item
   case "$item" in
     y|Y) sudo reboot ;;
-    n|N) echo -e "${RED}[WARNING]${NC} You should reboot before you'll able to continue."; exit 1 ;;
+    n|N) echo -e "${RED}[WARNING]${NC} You should reboot. Script will continue after your next login."; exit 1 ;;
     *) sudo reboot ;;
   esac
+}
+
+function add_startup_script(){
+  echo \
+'#!/usr/bin/env bash
+cd /home/touchon/touchon_init_script
+./init.sh setup'
+> /etc/profile.d/startup.sh
+  sudo chmod +x /etc/profile.d/startup.sh
+  sudo rm -- "$0"
+}
+
+function check_startup_script(){
+  if [[ -e /etc/profile.d/startup.sh ]]; then
+    echo -e "${RED}[WARNING]${NC} You should reboot. Script will continue after your next login."
+    exit 1
+  fi
 }
 
 function check_docker-compose(){
@@ -188,12 +206,7 @@ function docker_delete(){
   sudo usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
 }
 
-#rootfs_expand
-#iptables_legacy
-#docker_installation
-#docker-compose_installation
-#run_dc
-#app_installation
+del_startup_script
 
 if [[ ! -f .env ]]; then
   echo \
@@ -240,7 +253,7 @@ case "$1" in
   down) down_docker-compose ;;
   cupd) update_docker-compose ;;
   app) app_installation ;;
-  all) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
+  setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
   -x) docker_delete ;;
   *) echo "$1 is not an option"; usage; exit 254 ;;
 esac
