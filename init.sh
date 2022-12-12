@@ -14,7 +14,9 @@ function usage(){
   echo "--ps          containers' status"
   echo "--cupd        update containers"
   echo "--setup       docker and docker-compose installation, download and start containers, apps setup"
-  echo -e "\nRun   ${YELLOW}./init --setup${NC}   first to configurate system.\n"
+  if [[ ! -d touchon_dc ]]; then
+    echo -e "\nRun   ${YELLOW}./init --setup${NC}   first to configurate system.\n"
+  fi
 }
 
 function rootfs_expand(){
@@ -79,7 +81,7 @@ function add_startup_script(){
   echo \
 '#!/usr/bin/env bash
 cd /home/touchon/touchon_init_script
-./init.sh setup
+./init.sh --setup
 sudo rm /etc/profile.d/startup.sh' | sudo tee /etc/profile.d/startup.sh > /dev/null
   sudo chmod +x /etc/profile.d/startup.sh
 }
@@ -200,13 +202,13 @@ server/include.php
   docker exec touchon_php-fpm chown -R www-data:www-data /var/www/server/userscripts
   docker exec touchon_php-fpm chmod -R 770 /var/www/server/userscripts
   docker exec -it touchon_php-fpm php adm/artisan migrate --seed --force
-  echo -e "/n"
-  echo "Please create admin panel superuser."
+  echo "\n${YELLOW}[CAUTION]${NC} Please create admin panel superuser.\n"
   docker exec -it touchon_php-fpm php adm/artisan create:user
-  echo -e "/n"
+  echo -e "\n"
   echo -e "====================================================================="
   echo -e "            ${GREEN}Congrats! Everything is ready${NC}               "
   echo -e "====================================================================="
+  echo -e "\n\n\n"
 }
 
 if [[ ! -f .env ]]; then
