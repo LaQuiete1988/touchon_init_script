@@ -42,8 +42,7 @@ grep -c "ok installed") -eq 0 ]; then
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install docker-ce -y
     sudo usermod -aG docker $USER
-    exec sg newgroup $0
-    docker run hello-world
+    negrp docker | exec "./init.sh -s"
     if [ $? -eq 0 ]; then
       echo -e "${GREEN}[OK]${NC} Docker was installed sucsessfully."
     else
