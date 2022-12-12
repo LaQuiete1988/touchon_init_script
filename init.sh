@@ -30,9 +30,9 @@ function docker_installation(){
   if [[ -e /var/run/docker.sock ]]; then
     docker run hello-world
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[INFO]${NC} Docker is already installed."
+      echo -e "\n${GREEN}[INFO]${NC} Docker is already installed.\n"
     else
-      echo -e "${RED}[FAIL]${NC} Docker failed to install."
+      echo -e "\n${RED}[FAIL]${NC} Docker failed to install.\n"
       exit 1
     fi
   else
@@ -51,28 +51,26 @@ function docker_installation(){
 function docker-compose_installation(){
   if [ -x /usr/bin/docker-compose ];
   then
-    echo -e "${GREEN}[INFO]${NC} Docker-compose is already installed."
+    echo -e "\n${GREEN}[INFO]${NC} Docker-compose is already installed.\n"
   else
     sudo wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-$(uname -m) \
 && sudo chmod +x /usr/bin/docker-compose
     if [ -x /usr/bin/docker-compose ]; then
-      echo -e "${GREEN}[INFO]${NC} Docker-compose installed sucsessfully."
-	    echo -e "\n"
+      echo -e "\n${GREEN}[INFO]${NC} Docker-compose installed sucsessfully.\n"
     else
-      echo -e "${RED}[FAIL]${NC} Docker-compose failed to install."
+      echo -e "\n${RED}[FAIL]${NC} Docker-compose failed to install.\n"
       exit 1
     fi
   fi
 }
 
 function reboot(){
-  echo -e "\n"
-  echo -e "${YELLOW}[CAUTION]${NC} Now reboot is required. Script will continue after your next login.\nReboot right now?"
+  echo -e "\n${YELLOW}[CAUTION]${NC} Now reboot is required. Script will continue after your next login.\nReboot right now?"
   echo -n "Continue? (Y/n) "
   read item
   case "$item" in
     y|Y) sudo reboot ;;
-    n|N) echo -e "${RED}[WARNING]${NC} You should reboot. Script will continue after your next login."; exit 1 ;;
+    n|N) echo -e "\n${RED}[WARNING]${NC} You should reboot. Script will continue after your next login.\n"; exit 1 ;;
     *) sudo reboot ;;
   esac
 }
@@ -88,7 +86,7 @@ sudo rm /etc/profile.d/startup.sh' | sudo tee /etc/profile.d/startup.sh > /dev/n
 
 function check_startup_script(){
   if [[ -e /etc/profile.d/startup.sh ]]; then
-    echo -e "${RED}[WARNING]${NC} You should reboot. Script will continue after your next login."
+    echo -e "\n${RED}[WARNING]${NC} You should reboot. Script will continue after your next login.\n"
     exit 1
   fi
 }
@@ -102,10 +100,10 @@ function check_docker-compose(){
     fi
   done
   if [[ $containers -eq ${#services[@]} ]]; then
-    echo -e "${GREEN}[INFO]${NC} Docker-compose containers started sucsessfully."
+    echo -e "\n${GREEN}[INFO]${NC} Docker-compose containers started sucsessfully.\n"
     containers=0
   else
-    echo -e "${RED}[FAIL]${NC} Docker-compose containers failed to start properly."
+    echo -e "\n${RED}[FAIL]${NC} Docker-compose containers failed to start properly.\n"
     exit 1
     containers=0
   fi
@@ -114,20 +112,20 @@ function check_docker-compose(){
 function setup_docker-compose(){
     git clone https://github.com/LaQuiete1988/touchon_dc.git
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[INFO]${NC} Docker-compose containers are ready to start."
+      echo -e "\n${GREEN}[INFO]${NC} Docker-compose containers are ready to start.\n"
     else
-      echo -e "${RED}[FAIL]${NC} Docker-compose files failed to download."
+      echo -e "\n${RED}[FAIL]${NC} Docker-compose files failed to download.\n"
       exit 1
     fi
 }
 
 function down_docker-compose(){
   if [[ ! -d touchon_dc ]]; then
-    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
+    echo -e "\n${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first.\n"
     exit 1
   else
     cd touchon_dc && docker-compose down && cd ..
-    echo -e "${GREEN}[INFO]${NC} Docker-compose containers were stoped."
+    echo -e "\n${GREEN}[INFO]${NC} Docker-compose containers were stoped.\n"
   fi
 }
 
@@ -142,14 +140,14 @@ function up_docker-compose(){
       check_docker-compose
     fi
   else
-    echo -e "${RED}[FAIL]${NC} Install docker first. Run\n\n     ./init.sh --setup.\n"
+    echo -e "\n${RED}[FAIL]${NC} Install docker first. Run\n\n     ./init.sh --setup\n"
     exit 1
   fi
 }
 
 function status_docker-compose(){
   if [[ ! -d touchon_dc ]]; then
-    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
+    echo -e "\n${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first.\n"
     exit 1
   else
     cd touchon_dc && docker-compose ps && cd ..
@@ -161,15 +159,15 @@ function update_docker-compose(){
     cd touchon_dc && docker-compose down
     git pull origin master
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[INFO]${NC} Docker-compose files were updated."
+      echo -e "\n${GREEN}[INFO]${NC} Docker-compose files were updated.\n"
     else
-      echo -e "${RED}[FAIL]${NC} Docker-compose files failed to update."
+      echo -e "\n${RED}[FAIL]${NC} Docker-compose files failed to update.\n"
       exit 1
     fi
     docker-compose up -d --no-deps --build && cd ..
     check_docker-compose
   else
-    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
+    echo -e "\n${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first.\n"
     exit 1
   fi
 }
@@ -211,16 +209,6 @@ server/include.php
   echo -e "====================================================================="
 }
 
-function docker_delete(){
-  sudo apt-get purge docker-ce -y
-  sudo apt autoremove -y
-  sudo rm -rf /etc/apt/keyrings
-  echo "" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  sudo rm /usr/bin/docker-compose
-  usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
-  reboot
-}
-
 if [[ ! -f .env ]]; then
   echo \
 '#For GitHUB
@@ -235,12 +223,12 @@ MYSQL_DATABASE=
 MYSQL_PASSWORD=
 MYSQL_ROOT_PASSWORD=' \
   > .env
-  echo -e "${YELLOW}[CAUTION]${NC} .env file was created. Please fill it out first."
+  echo -e "\n${YELLOW}[CAUTION]${NC} .env file was created. Please fill it out first.\n"
   exit 1
 else
   sed /^[A-Z]/s/' '//g -i .env
   if [[ $(sed -n /=$/p .env | wc -l) -gt 0 ]]; then
-    echo -e "${YELLOW}[CAUTION]${NC} Please fill out .env file"
+    echo -e "\n${YELLOW}[CAUTION]${NC} Please fill out .env file\n"
     exit 1
   fi
   export $(grep -v '^#' .env | xargs)
