@@ -31,24 +31,25 @@ function iptables_legacy(){
 }
 
 function docker_installation(){
-  if [ $(docker -v) -eq 0 ]; then
-    apt-get update && apt-get install ca-certificates curl gnupg lsb-release -y
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-$(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update && apt-get install docker-ce -y
-    usermod -aG docker $USER
-    add_startup_script
-    reboot
-  else
+  docker -v > /dev/null
+  if [ $# -eq 0 ]; then
     docker run hello-world
     if [ $? -eq 0 ]; then
       echo -e "${GREEN}[INFO]${NC} Docker is already installed."
     else
-      echo -e "${RED}[FAIL!]${NC} Docker failed to install."
+      echo -e "${RED}[FAIL]${NC} Docker failed to install."
       exit 1
     fi
+  else
+    apt-get update && apt-get install ca-certificates curl gnupg lsb-release -y
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update && apt-get install docker-ce -y
+    usermod -aG docker $USER
+    add_startup_script
+    reboot
   fi
 }
 
