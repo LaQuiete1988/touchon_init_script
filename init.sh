@@ -202,11 +202,11 @@ server/include.php
   docker exec touchon_php-fpm chown -R www-data:www-data /var/www/server/userscripts
   docker exec touchon_php-fpm chmod -R 770 /var/www/server/userscripts
   docker exec -it touchon_php-fpm php adm/artisan migrate --seed --force
-  echo "\n${YELLOW}[CAUTION]${NC} Please create admin panel superuser.\n"
+  echo -e "\n${YELLOW}[CAUTION]${NC} Please create admin panel superuser.\n"
   docker exec -it touchon_php-fpm php adm/artisan create:user
   echo -e "\n"
   echo -e "====================================================================="
-  echo -e "            ${GREEN}Congrats! Everything is ready${NC}               "
+  echo -e "                    ${GREEN}Congrats! Everything is ready${NC}               "
   echo -e "====================================================================="
   echo -e "\n\n\n"
 }
