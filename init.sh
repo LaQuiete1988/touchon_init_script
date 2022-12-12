@@ -8,8 +8,6 @@ NC='\033[0m'
 function usage(){
   echo "Usage: init.sh [OPTION]"
   echo "Available options:"
-#  echo "-e   expand rootfs on the hole drive"
-#  echo "-l   enable iptable legacy mode"
   echo "help       help"
   echo "docker     docker and docker-compose installation"
   echo "up         download and start containers"
@@ -193,6 +191,7 @@ server/include.php
   docker exec touchon_php-fpm chmod -R 770 /var/www/server/userscripts
   docker exec -it touchon_php-fpm php adm/artisan migrate --seed --force
   docker exec -it touchon_php-fpm php adm/artisan create:user
+  echo "superadmin"
 }
 
 function docker_delete(){
@@ -242,8 +241,6 @@ fi
 while [ -n "$1" ]
 do
 case "$1" in
-  # -e) rootfs_expand ;;
-  # -l) iptables_legacy ;;
   help) usage; exit 254 ;;
   docker) docker_installation; docker-compose_installation  ;;
   up) up_docker-compose ;;
