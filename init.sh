@@ -6,18 +6,18 @@ YELLOW='\033[33m'
 NC='\033[0m'
 
 function usage(){
-  echo "Usage: init.sh [KEYS]"
+  echo "Usage: init.sh [OPTION]"
   echo "Available options:"
 #  echo "-e   expand rootfs on the hole drive"
 #  echo "-l   enable iptable legacy mode"
-  echo "-h       help"
-  echo "-s       docker and docker-compose installation"
-  echo "-up      download and start containers"
-  echo "-down    stop containers"
-  echo "-upd     update containers"
-  echo "-as      apps setup"
-  echo "-all     docker and docker-compose installation, download and start containers, apps setup"
-  echo "-x       delete docker and docker-compose"
+  echo "help       help"
+  echo "docker     docker and docker-compose installation"
+  echo "up         download and start containers"
+  echo "down       stop containers"
+  echo "cupd       update containers"
+  echo "app        apps setup"
+  echo "all        docker and docker-compose installation, download and start containers, apps setup"
+  echo "-x         delete docker and docker-compose"
 }
 
 function rootfs_expand(){
@@ -32,11 +32,7 @@ function iptables_legacy(){
 function docker_installation(){
   if [ $(dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | \
 grep -c "ok installed") -eq 0 ]; then
-    # echo "==================================================="
-    # echo "        Docker installation                        "
-    # echo "==================================================="
-    sudo apt-get update
-    sudo apt-get install ca-certificates curl gnupg lsb-release -y
+    sudo apt-get update && apt-get install ca-certificates curl gnupg lsb-release -y
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
@@ -47,7 +43,7 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
   else
     docker run hello-world
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}Docker is already installed${NC}"
+      echo -e "${GREEN}[INFO]${NC} Docker is already installed."
     else
       echo -e "${RED}[FAIL!]${NC} Docker failed to install."
       exit 1
@@ -59,20 +55,15 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
 function docker-compose_installation(){
   if [ -x /usr/bin/docker-compose ];
   then
-    echo -e "${GREEN}Docker-compose is already installed${NC}"
+    echo -e "${GREEN}[INFO]${NC} Docker-compose is already installed."
   else
-    echo -e "\n"
-    echo "==================================================="
-    echo "    Docker-compose installation                    "
-    echo "==================================================="
-	echo -e "\n"
     sudo wget -O /usr/bin/docker-compose https://github.com/docker/compose/releases/download/v2.13.0/docker-compose-linux-$(uname -m) \
 && sudo chmod +x /usr/bin/docker-compose
     if [ -x /usr/bin/docker-compose ]; then
-      echo -e "${GREEN}[OK]${NC} Docker-compose installed sucsessfully."
+      echo -e "${GREEN}[INFO]${NC} Docker-compose installed sucsessfully."
 	    echo -e "\n"
     else
-      echo -e "${RED}[FAIL!]${NC} Docker-compose failed to install."
+      echo -e "${RED}[FAIL]${NC} Docker-compose failed to install."
       exit 1
     fi
   fi
@@ -99,10 +90,10 @@ function check_docker-compose(){
     fi
   done
   if [[ $containers -eq ${#services[@]} ]]; then
-    echo -e "${GREEN}[OK]${NC} Docker-compose containers started sucsessfully."
+    echo -e "${GREEN}[INFO]${NC} Docker-compose containers started sucsessfully."
     containers=0
   else
-    echo -e "${RED}[FAIL!]${NC} Docker-compose containers failed to start properly."
+    echo -e "${RED}[FAIL]${NC} Docker-compose containers failed to start properly."
     exit 1
     containers=0
   fi
@@ -111,7 +102,7 @@ function check_docker-compose(){
 function setup_docker-compose(){
     git clone https://github.com/LaQuiete1988/touchon_dc.git
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[OK]${NC} Docker-compose containers are ready to start."
+      echo -e "${GREEN}[INFO]${NC} Docker-compose containers are ready to start."
     else
       echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to download."
       exit 1
@@ -120,11 +111,11 @@ function setup_docker-compose(){
 
 function down_docker-compose(){
   if [[ ! -d touchon_dc ]]; then
-    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. Please install them first."
+    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
     exit 1
   else
     cd touchon_dc && docker-compose down && cd ..
-    echo -e "${GREEN}[OK]${NC} Docker-compose containers were stoped."
+    echo -e "${GREEN}[INFO]${NC} Docker-compose containers were stoped."
   fi
 }
 
@@ -139,53 +130,44 @@ function up_docker-compose(){
   fi
 }
 
-
 function update_docker-compose(){
   if [[ -d touchon_dc ]]; then
     cd touchon_dc && docker-compose down
     git pull origin master
     if [ $? -eq 0 ]; then
-      echo -e "${GREEN}[OK]${NC} Docker-compose files were updated."
+      echo -e "${GREEN}[INFO]${NC} Docker-compose files were updated."
     else
-      echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to update."
+      echo -e "${RED}[FAIL]${NC} Docker-compose files failed to update."
       exit 1
     fi
     docker-compose up -d --no-deps --build && cd ..
     check_docker-compose
   else
-    echo -e "${RED}[FAIL!]${NC} Docker-compose containers are not installed. Please install them first."
+    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
     exit 1
   fi
 }
 
 
 function app_installation(){
-  docker exec touchon_php-fpm git clone \
-  https://$GIT_USERNAME:$GIT_TOKEN@github.com/VladimirDronik/adm.git \
-  -b $ADM_VERSION
+  docker exec touchon_php-fpm git clone https://$GIT_USERNAME:$GIT_TOKEN@github.com/VladimirDronik/adm.git -b $ADM_VERSION
   docker cp touchon_dc/php-fpm/apps/. touchon_php-fpm:/var/www/adm/
   docker exec touchon_php-fpm sed -i \
-  -e 's/DB_DATABASE=.*/DB_DATABASE=\${MYSQL_DATABASE}/g' \
-  -e 's/DB_USERNAME=.*/DB_USERNAME=\${MYSQL_USER}/g' \
-  -e 's/DB_PASSWORD=.*/DB_PASSWORD=\${MYSQL_PASSWORD}/g' \
-  adm/.env
+-e 's/DB_DATABASE=.*/DB_DATABASE=\${MYSQL_DATABASE}/g' \
+-e 's/DB_USERNAME=.*/DB_USERNAME=\${MYSQL_USER}/g' \
+-e 's/DB_PASSWORD=.*/DB_PASSWORD=\${MYSQL_PASSWORD}/g' \
+adm/.env
   docker exec touchon_php-fpm php adm/artisan key:generate
-  docker exec touchon_php-fpm git clone \
-  https://$GIT_USERNAME:$GIT_TOKEN@github.com/VladimirDronik/server.git \
-  -b $CORE_VERSION
+  docker exec touchon_php-fpm git clone https://$GIT_USERNAME:$GIT_TOKEN@github.com/VladimirDronik/server.git -b $CORE_VERSION
   docker exec touchon_php-fpm sed -i \
-  -e 's/localhost/mysql/' \
-  -e 's/127.0.0.1/php-fpm/' \
-  server/include.php
+-e 's/localhost/mysql/' \
+-e 's/127.0.0.1/php-fpm/' \
+-e "s/\$dbname =.*/\$dbname = \'\${MYSQL_DATABASE}\';/g" \
+-e "s/\$dbuser =.*/\$dbuser = \'\${MYSQL_USER}\';/g" \
+-e "s/\$dbpass =.*/\$dbpass = \'\${MYSQL_PASSWORD}\';/g" \
+server/include.php
   docker exec touchon_php-fpm sed -i 's/127.0.0.1/php-fpm/' server/server.php
-  docker exec touchon_php-fpm sed -i \
-  's/php -f thread.php/cd \".ROOT_DIR.\" \&\& php -f thread.php/' \
-  server/classes/SendSocket.php
-  docker exec touchon_php-fpm sed -i \
-  -e "s/\$dbname =.*/\$dbname = \'\${MYSQL_DATABASE}\';/g" \
-  -e "s/\$dbuser =.*/\$dbuser = \'\${MYSQL_USER}\';/g" \
-  -e "s/\$dbpass =.*/\$dbpass = \'\${MYSQL_PASSWORD}\';/g" \
-  server/include.php
+  docker exec touchon_php-fpm sed -i 's/php -f thread.php/cd \".ROOT_DIR.\" \&\& php -f thread.php/' server/classes/SendSocket.php
   docker exec touchon_php-fpm chown -R www-data:www-data adm
   docker exec touchon_php-fpm find /var/www/adm -type f -exec chmod 644 {} \+
   docker exec touchon_php-fpm find /var/www/adm -type d -exec chmod 755 {} \+
@@ -252,27 +234,15 @@ do
 case "$1" in
   # -e) rootfs_expand ;;
   # -l) iptables_legacy ;;
-  -h) usage; exit 254 ;;
+  help) usage; exit 254 ;;
   docker) docker_installation; docker-compose_installation  ;;
-  -up) up_docker-compose ;;
-  -down) down_docker-compose ;;
-  -upd) update_docker-compose ;;
-  -as) app_installation ;;
-  -all) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
+  up) up_docker-compose ;;
+  down) down_docker-compose ;;
+  cupd) update_docker-compose ;;
+  app) app_installation ;;
+  all) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
   -x) docker_delete ;;
   *) echo "$1 is not an option"; usage; exit 254 ;;
 esac
 shift
 done
-
-
-#while getopts ":e:l:h:d:p:r:s:t:" opt; do
-#	case $opt in
-#		e) rootfs_expand ;;
-#		l) iptables_legacy ;;
-#		h) usage; exit 254 ;;
-#		d) docker_installation; docker-compose_installation ;;
-#		r) run_dc ;;
-#		a) app_installation ;;
-#	esac
-#done
