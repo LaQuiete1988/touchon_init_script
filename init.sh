@@ -2,6 +2,7 @@
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[33m'
 NC='\033[0m'
 
 function usage(){
@@ -43,17 +44,6 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
     sudo apt-get update && sudo apt-get install docker-ce -y
     sudo usermod -aG docker $USER
     reboot
-    # if [ $? -eq 0 ]; then
-    #   echo -e "${GREEN}[OK]${NC} Docker was installed sucsessfully."
-    # else
-    #   echo -e "${RED}[FAIL!]${NC} Docker failed to install."
-    #   exit 1
-    # fi
-	  # echo -e "\n"
-    # echo "==================================================="
-    # echo "        Docker was installed                       "
-    # echo "==================================================="
-	  # echo -e "\n"
   else
     docker run hello-world
     if [ $? -eq 0 ]; then
@@ -89,12 +79,13 @@ function docker-compose_installation(){
 }
 
 function reboot(){
-  echo -e "Now reboot is required. You should run the script once again after reboot.\nReboot right now?"
-  echo -n "Продолжить? (Y/n) "
+  echo -e "\n"
+  echo -e "${YELLOW}[CAUTION]${NC} Now reboot is required. You should run the script once again after reboot.\nReboot right now?"
+  echo -n "Continue? (Y/n) "
   read item
   case "$item" in
     y|Y) sudo reboot ;;
-    n|N) echo "You should reboot before you'll able to continue."; exit 1 ;;
+    n|N) echo -e "${RED}[WARNING]${NC} You should reboot before you'll able to continue."; exit 1 ;;
     *) sudo reboot ;;
   esac
 }
@@ -262,7 +253,7 @@ case "$1" in
   # -e) rootfs_expand ;;
   # -l) iptables_legacy ;;
   -h) usage; exit 254 ;;
-  -s) docker_installation; docker-compose_installation  ;;
+  docker) docker_installation; docker-compose_installation  ;;
   -up) up_docker-compose ;;
   -down) down_docker-compose ;;
   -upd) update_docker-compose ;;
