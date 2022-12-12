@@ -31,8 +31,7 @@ function iptables_legacy(){
 }
 
 function docker_installation(){
-  docker -v > /dev/null
-  if [ $# -eq 0 ]; then
+  if [[ ! -e /var/run/docker.sock ]]; then
     docker run hello-world
     if [ $? -eq 0 ]; then
       echo -e "${GREEN}[INFO]${NC} Docker is already installed."
