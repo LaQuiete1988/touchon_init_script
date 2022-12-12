@@ -43,6 +43,7 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
     add_startup_script
     reboot
   else
+    check_startup_script
     docker run hello-world
     if [ $? -eq 0 ]; then
       echo -e "${GREEN}[INFO]${NC} Docker is already installed."
@@ -205,8 +206,6 @@ function docker_delete(){
   sudo rm /usr/bin/docker-compose
   sudo usermod -G touchon,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio $USER
 }
-
-check_startup_script
 
 if [[ ! -f .env ]]; then
   echo \
