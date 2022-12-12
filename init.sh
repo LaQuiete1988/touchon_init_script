@@ -14,6 +14,7 @@ function usage(){
   echo "--ps          containers' status"
   echo "--cupd        update containers"
   echo "--setup       docker and docker-compose installation, download and start containers, apps setup"
+  echo -e "/nRun ./init --setup first to configurate system.\n"
 }
 
 function rootfs_expand(){
@@ -115,7 +116,7 @@ function setup_docker-compose(){
     if [ $? -eq 0 ]; then
       echo -e "${GREEN}[INFO]${NC} Docker-compose containers are ready to start."
     else
-      echo -e "${RED}[FAIL!]${NC} Docker-compose files failed to download."
+      echo -e "${RED}[FAIL]${NC} Docker-compose files failed to download."
       exit 1
     fi
 }
@@ -131,13 +132,18 @@ function down_docker-compose(){
 }
 
 function up_docker-compose(){
-  if [[ ! -d touchon_dc ]]; then
-    setup_docker-compose
-    cd touchon_dc && docker-compose up -d && cd ..
-    check_docker-compose
+  if [[ -e /var/run/docker.sock ]]; then
+    if [[ ! -d touchon_dc ]]; then
+      setup_docker-compose
+      cd touchon_dc && docker-compose up -d && cd ..
+      check_docker-compose
+    else
+      cd touchon_dc && docker-compose up -d && cd ..
+      check_docker-compose
+    fi
   else
-    cd touchon_dc && docker-compose up -d && cd ..
-    check_docker-compose
+    echo -e "${RED}[FAIL]${NC} Install docker first. Run\n\n     ./init.sh --setup.\n"
+    exit 1
   fi
 }
 
@@ -229,24 +235,22 @@ MYSQL_DATABASE=
 MYSQL_PASSWORD=
 MYSQL_ROOT_PASSWORD=' \
   > .env
-  echo '.env file was created. Please fill it out first.'
+  echo -e "${YELLOW}[CAUTION]${NC} .env file was created. Please fill it out first."
   exit 1
 else
   sed /^[A-Z]/s/' '//g -i .env
   if [[ $(sed -n /=$/p .env | wc -l) -gt 0 ]]; then
-    echo -e "Please fill out .env file"
+    echo -e "${YELLOW}[CAUTION]${NC} Please fill out .env file"
     exit 1
   fi
   export $(grep -v '^#' .env | xargs)
 fi
 
 if [[ $# -eq 0 ]]; then
-    echo -e "No parameters found."
     usage
     exit 1
 fi
 if [[ "${1:-unset}" == "unset" ]]; then
-    echo -e "No parameters found."
     usage
     exit 1
 fi
