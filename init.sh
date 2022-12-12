@@ -8,15 +8,12 @@ NC='\033[0m'
 function usage(){
   echo "Usage: init.sh [OPTION]"
   echo "Available options:"
-  echo "help       help"
-  echo "docker     docker and docker-compose installation"
-  echo "up         download and start containers"
-  echo "down       stop containers"
-  echo "cupd       update containers"
-  echo "app        apps setup"
-  echo "setup      docker and docker-compose installation, download and start containers, apps setup"
-  echo "-x         delete docker and docker-compose"
-  echo "-s         add startup script"
+  echo "--help, -h    help"
+  echo "--up          download and start containers"
+  echo "--down        stop containers"
+  echo "--ps          containers' status"
+  echo "--cupd        update containers"
+  echo "--setup       docker and docker-compose installation, download and start containers, apps setup"
 }
 
 function rootfs_expand(){
@@ -144,6 +141,15 @@ function up_docker-compose(){
   fi
 }
 
+function status_docker-compose(){
+  if [[ ! -d touchon_dc ]]; then
+    echo -e "${RED}[FAIL]${NC} Docker-compose containers are not installed. Please install them first."
+    exit 1
+  else
+    cd touchon_dc && docker-compose ps && cd ..
+  fi
+}
+
 function update_docker-compose(){
   if [[ -d touchon_dc ]]; then
     cd touchon_dc && docker-compose down
@@ -190,8 +196,13 @@ server/include.php
   docker exec touchon_php-fpm chown -R www-data:www-data /var/www/server/userscripts
   docker exec touchon_php-fpm chmod -R 770 /var/www/server/userscripts
   docker exec -it touchon_php-fpm php adm/artisan migrate --seed --force
+  echo -e "/n"
+  echo "Please create admin panel superuser."
   docker exec -it touchon_php-fpm php adm/artisan create:user
-  echo "superadmin"
+  echo -e "/n"
+  echo -e "====================================================================="
+  echo -e "            ${GREEN}Congrats! Everything is ready${NC}               "
+  echo -e "====================================================================="
 }
 
 function docker_delete(){
@@ -230,27 +241,27 @@ else
 fi
 
 if [[ $# -eq 0 ]]; then
-  echo -e "No keys found. "
-  exit 1
+    echo -e "No parameters found."
+    usage
+    exit 1
 fi
 if [[ "${1:-unset}" == "unset" ]]; then
-  echo -e "No keys found. "
-  exit 1
+    echo -e "No parameters found."
+    usage
+    exit 1
 fi
 
 while [ -n "$1" ]
 do
 case "$1" in
-  help) usage; exit 254 ;;
-  docker) docker_installation; docker-compose_installation  ;;
-  up) up_docker-compose ;;
-  down) down_docker-compose ;;
-  cupd) update_docker-compose ;;
-  app) app_installation ;;
-  setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
-  -x) docker_delete ;;
-  -s) add_startup_script ;;
-  *) echo "$1 is not an option"; usage; exit 254 ;;
+  --help) usage; exit 1 ;;
+  -h) usage; exit 1 ;;
+  --up) up_docker-compose ;;
+  --down) down_docker-compose ;;
+  --ps) status_docker-compose ;;
+  --cupd) update_docker-compose ;;
+  --setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
+  *) echo "$1 is not an option"; usage; exit 1 ;;
 esac
 shift
 done
