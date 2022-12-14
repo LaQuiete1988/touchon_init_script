@@ -191,9 +191,9 @@ adm/.env
   docker exec touchon_php-fpm sed -i \
 -e 's/localhost/mysql/' \
 -e 's/127.0.0.1/php-fpm/' \
--e "s/\$dbname =.*/\$dbname = \'\${MYSQL_DATABASE}\';/g" \
--e "s/\$dbuser =.*/\$dbuser = \'\${MYSQL_USER}\';/g" \
--e "s/\$dbpass =.*/\$dbpass = \'\${MYSQL_PASSWORD}\';/g" \
+-e "s/\$dbname =.*/\$dbname = getenv(\'MYSQL_DATABASE\');/g" \
+-e "s/\$dbuser =.*/\$dbuser = getenv(\'MYSQL_USER\');/g" \
+-e "s/\$dbpass =.*/\$dbpass = getenv(\'MYSQL_PASSWORD\');/g" \
 server/include.php
   docker exec touchon_php-fpm sed -i 's/127.0.0.1/php-fpm/' server/server.php
   docker exec touchon_php-fpm sed -i 's/php -f thread.php/cd \".ROOT_DIR.\" \&\& php -f thread.php/' server/classes/SendSocket.php
