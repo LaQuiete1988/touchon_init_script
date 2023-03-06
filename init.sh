@@ -162,7 +162,7 @@ function status_docker-compose(){
 function update_docker-compose(){
   if [[ -d touchon_dc ]]; then
     cd touchon_dc && docker-compose down
-    git pull origin master
+#    git pull origin develop
     if [ $? -eq 0 ]; then
       echo -e "\n${GREEN}[INFO]${NC} Docker-compose files were updated.\n"
     else
@@ -226,7 +226,12 @@ CORE_VERSION=
 MYSQL_USER=
 MYSQL_DATABASE=
 MYSQL_PASSWORD=
-MYSQL_ROOT_PASSWORD=' \
+MYSQL_ROOT_PASSWORD=
+
+#For Backup
+CLIENT_DIR=
+SSH_USER=
+SSH_SERVER=' \
   > .env
   echo -e "\n${YELLOW}[CAUTION]${NC} .env file was created. Please fill it out first.\n"
   exit 1
@@ -251,13 +256,13 @@ fi
 while [ -n "$1" ]
 do
 case "$1" in
-  --help) usage; exit 1 ;;
+  help) usage; exit 1 ;;
   -h) usage; exit 1 ;;
-  --up) up_docker-compose ;;
-  --down) down_docker-compose ;;
-  --ps) status_docker-compose ;;
-  --cupd) update_docker-compose ;;
-  --setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
+  up) up_docker-compose ;;
+  down) down_docker-compose ;;
+  ps) status_docker-compose ;;
+  update) update_docker-compose ;;
+  setup) docker_installation; docker-compose_installation; up_docker-compose; app_installation ;;
   *) echo "$1 is not an option"; usage; exit 1 ;;
 esac
 shift
